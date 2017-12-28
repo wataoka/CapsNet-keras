@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/XifengGuo/CapsNet-Keras/blob/master/LICENSE)
 
 ## 背景
-　2017年, ディープラーニング界にまたしても新たな技術が生み出されました. Googleの研究員,Geoffrey E. Hinton(ジェフリーヒントん)さんが発表した論文(Dynamic Routing Between Capsules)でカプセルネットワークという手法が提案されました. この手法を[Xifeng Guo](https://github.com/XifengGuo)さんがkerasで実装されていましたので, ほとんど真似しながら実装し, 説明等を日本語訳しました. カプセルネットワークの理解に関しましては本ページでは扱いませんので, 本ページ末尾のリンク集を一通り読んでいただければ実装できるかと思われます.
+　2017年, ディープラーニング界にまたしても新たな技術が生み出されました. Googleの研究員,Geoffrey E. Hinton(ジェフリーヒントん)さんが発表した論文(Dynamic Routing Between Capsules)でカプセルネットワークという手法が提案されました. この手法を[Xifeng Guo](https://github.com/XifengGuo)さんがkerasで実装されていましたので, ほとんど真似しながら実装し,説明等を日本語訳しました. カプセルネットワークの理解に関しましては本ページでは扱いませんので, 本ページ末尾のリンク集を一通り読んでいただければ実装できるかと思われます.
 
 論文へのリンクは[こちら](http://papers.nips.cc/paper/6975-dynamic-routing-between-capsules.pdf)
 
@@ -165,6 +165,7 @@ python capsulenet.py -t --digit 5 -w result/trained_model.h5
     - [機械学習ざっくりまとめ](https://qiita.com/frost_star/items/21de02ce0d77a156f53d)
     - [オススメの本](https://www.oreilly.co.jp/books/9784873117584/)
 - カプセルネットワーク 
+    - [元論文](http://papers.nips.cc/paper/6975-dynamic-routing-between-capsules.pdf)
     - [世界一わかりやすいカプセルネットワーク](http://blog.aidemy.net/entry/2017/12/03/052302)
     - [カプセルネットワークはニューラルネットワークを超えるか。](https://qiita.com/hiyoko9t/items/f426cba38b6ca1a7aa2b)
     - [グーグルの天才AI研究者、ニューラルネットワークを超えるカプセルネットワークを発表](https://wired.jp/2017/11/28/google-capsule-networks/)
