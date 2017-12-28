@@ -1,88 +1,78 @@
-# CapsNet-Keras
+# カプセルネットワークをkerasで実装
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/XifengGuo/CapsNet-Keras/blob/master/LICENSE)
 
-A Keras implementation of CapsNet in the paper:   
-[Sara Sabour, Nicholas Frosst, Geoffrey E Hinton. Dynamic Routing Between Capsules. NIPS 2017](https://arxiv.org/abs/1710.09829)   
-The current `average test error = 0.34%` and `best test error = 0.30%`.   
+## 背景
+　2017年, ディープラーニング界にまたしても新たな技術が生み出されました. Googleの研究員,Geoffrey E. Hinton(ジェフリーヒントん)さんが発表した論文(Dynamic Routing Between Capsules)でカプセルネットワークという手法が提案されました. この手法を[Xifeng Guo](https://github.com/XifengGuo)さんがkerasで実装されていましたので, ほとんど真似しながら実装し, 説明等を日本語訳しました. カプセルネットワークの理解に関しましては本ページでは扱いませんので, 本ページ末尾のリンク集を一通り読んでいただければ実装できるかと思われます.
+
+論文へのリンクは[こちら](http://papers.nips.cc/paper/6975-dynamic-routing-between-capsules.pdf)
+
  
-**Differences with the paper:**   
-- We use the learning rate decay with `decay factor = 0.9` and `step = 1 epoch`,    
-while the paper did not give the detailed parameters (or they didn't use it?).
-- We only report the test errors after `50 epochs` training.   
-In the paper, I suppose they trained for `1250 epochs` according to Figure A.1?
-Sounds crazy, maybe I misunderstood.
-- We use MSE (mean squared error) as the reconstruction loss and 
-the coefficient for the loss is `lam_recon=0.0005*784=0.392`.   
-This should be **equivalent** with using SSE (sum squared error) and `lam_recon=0.0005` as in the paper.
+## 論文と異なる点
+- `decay factor = 0.9` `step = 1 epoch`とした.
+論文では細かいパラメータまでは指定されていなかった.
+- エポック数を50とした
+論文では1250エポック
+- reconstruction loss関数にMSE(mean squared error)を使用した. and 
+論文ではEES(sum squared error)
+※reconstruction loss関数とはdecoderの出力を教師データと比較し, ロスを計算するもの.
+- `lam_recon=0.0005*784=0.392`とした.   
+論文では`lam_recon=0.0005`
 
 
-**TODO**
-- Conduct experiments on other datasets. 
-- Explore interesting characteristics of CapsuleNet.
+## 使用方法
 
-**Contacts**
-- Your contributions to the repo are always welcome. 
-Open an issue or contact me with E-mail `guoxifeng1990@163.com` or WeChat `wenlong-guo`.
-
-
-## Usage
-
-**Step 1.
-Install [Keras>=2.0.7](https://github.com/fchollet/keras) 
-with [TensorFlow>=1.2](https://github.com/tensorflow/tensorflow) backend.**
+### ■Step 1. インストール
+[TensorFlow>=1.2](https://github.com/tensorflow/tensorflow)
+[Keras>=2.0.7](https://github.com/fchollet/keras)をインストール 
 ```
 pip install tensorflow-gpu
 pip install keras
 ```
 
-**Step 2. Clone this repository to local.**
+### ■Step 2. リポジトリをクローン
 ```
 git clone https://github.com/XifengGuo/CapsNet-Keras.git capsnet-keras
 cd capsnet-keras
 ```
 
-**Step 3. Train a CapsNet on MNIST**  
+### ■Step 3. 実行
 
-Training with default settings:
+デフォルト設定
 ```
 python capsulenet.py
 ```
 
-More detailed usage run for help:
+ヘルプ機能
 ```
 python capsulenet.py -h
 ```
 
-**Step 4. Test a pre-trained CapsNet model**
+### ■Step 4. モデル検証
 
-Suppose you have trained a model using the above command, then the trained model will be
-saved to `result/trained_model.h5`. Now just launch the following command to get test results.
+下記のコマンドで`result/trained_model.h5`にモデルを保存することができます.
 ```
 $ python capsulenet.py -t -w result/trained_model.h5
 ```
-It will output the testing accuracy and show the reconstructed images.
-The testing data is same as the validation data. It will be easy to test on new data, 
-just change the code as you want.
+テストaccuracyと再構成された画像を出力してくれます.
 
-You can also just *download a model I trained* from 
-https://pan.baidu.com/s/1sldqQo1
+学習済みモデルのダウンロードは[こちら](https://pan.baidu.com/s/1sldqQo1)
 
 
-**Step 5. Train on multi gpus**   
+### ■Step 5. GPUで学習
 
-This requires `Keras>=2.0.9`. After updating Keras:   
+(注)Keras 2.0.9が必要ですので満たしていない方はアップデートをしてください.  
 ```
 python capsulenet-multi-gpu.py --gpus 2
 ```
-It will automatically train on multi gpus for 50 epochs and then output the performance on test dataset.
-But during training, no validation accuracy is reported.
+このコマンドで自動的にGPUを用いて処理してくれます. なお,トレーニング中はaccuracyを出力しません.
 
-## Results
+## 結果
 
-#### Test Errors   
+#### テストエラー率  
 
-CapsNet classification test **error** on MNIST. Average and standard deviation results are
-reported by 3 trials. The results can be reproduced by launching the following commands.   
+平均と標準偏差は3回行った結果です.  
+この結果は下記のコマンドで出力できます.
+
  ```
  python capsulenet.py --routings 1 --lam_recon 0.0    #CapsNet-v1   
  python capsulenet.py --routings 1 --lam_recon 0.392  #CapsNet-v2
@@ -97,24 +87,25 @@ reported by 3 trials. The results can be reproduced by launching the following c
    CapsNet-v3 |  3 | no | 0.40 (0.016)  | *0.35 (0.036)*
    CapsNet-v4  |  3 | yes| 0.34 (0.016) | *0.25 (0.005)*
    
-Losses and accuracies:   
+lossとaccuracyのグラフ:
 ![](result/log.png)
 
 
-#### Training Speed 
+#### 学習速度
 
-About `100s / epoch` on a single GTX 1070 GPU.   
-About `80s / epoch` on a single GTX 1080Ti GPU.   
-About `55s / epoch` on two GTX 1080Ti GPU by using `capsulenet-multi-gpu.py`.      
+|実行環境|速度|
+|:--|:--|
+|single GTX 1070 GPU|約`100s / epoch`|
+|single GTX 1080Ti GPU|約`80s / epoch`| 
+|two GTX 1080Ti GPU(`capsulenet-multi-gpu.py`を使用)|約`55s / epoch`|
 
-#### Reconstruction result  
-
-The result of CapsNet-v4 by launching   
+#### 再構成結果  
+これらはCapsNet-v4の結果です.
 ```
 python capsulenet.py -t -w result/trained_model.h5
 ```
-Digits at top 5 rows are real images from MNIST and 
-digits at bottom are corresponding reconstructed images.
+上段5つはMNISTからの生データ  
+下段5つがそれぞれに対応する再構成データ
 
 ![](result/real_and_recon.png)
 
@@ -123,15 +114,12 @@ digits at bottom are corresponding reconstructed images.
 ```
 python capsulenet.py -t --digit 5 -w result/trained_model.h5 
 ```
-For each digit, the *i*th row corresponds to the *i*th dimension of the capsule, and columns from left to 
-right correspond to adding `[-0.25, -0.2, -0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.25]` to 
-the value of one dimension of the capsule. 
+それぞれの数字において, i番目の数字はi番目のカプセルに対応します.  
+左の列から順に`[-0.25, -0.2, -0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.25]`というカプセルの次元の値となっています.
 
-As we can see, each dimension has caught some characteristics of a digit. The same dimension of 
-different digit capsules may represent different characteristics. This is because that different 
-digits are reconstructed from different feature vectors (digit capsules). These vectors are mutually 
-independent during reconstruction.
-    
+それぞれの数字の特徴をしっかりとつかめているように見受けられますね.  
+同じ次元でも別の数字では異なる書き方をされていますが, これは異なる特徴ベクトル(feature vectors)またはカプセル(digit capsules)から生成されているためです.
+
 ![](result/manipulate-0.png)
 ![](result/manipulate-1.png)
 ![](result/manipulate-2.png)
@@ -144,7 +132,7 @@ independent during reconstruction.
 ![](result/manipulate-9.png)
 
 
-## Other Implementations
+## 別の手法
 
 - PyTorch:
   - [XifengGuo/CapsNet-Pytorch](https://github.com/XifengGuo/CapsNet-Pytorch)
@@ -167,3 +155,17 @@ independent during reconstruction.
 
 - Matlab:
   - [yechengxi/LightCapsNet](https://github.com/yechengxi/LightCapsNet)
+
+## リンク集
+- python 
+    - [python入門](http://www.tohoho-web.com/python/)
+- keras
+    - [keras公式ドキュメント](https://keras.io/ja/)
+- ディープラーニング
+    - [機械学習ざっくりまとめ](https://qiita.com/frost_star/items/21de02ce0d77a156f53d)
+    - [オススメの本](https://www.oreilly.co.jp/books/9784873117584/)
+- カプセルネットワーク 
+    - [世界一わかりやすいカプセルネットワーク](http://blog.aidemy.net/entry/2017/12/03/052302)
+    - [カプセルネットワークはニューラルネットワークを超えるか。](https://qiita.com/hiyoko9t/items/f426cba38b6ca1a7aa2b)
+    - [グーグルの天才AI研究者、ニューラルネットワークを超えるカプセルネットワークを発表](https://wired.jp/2017/11/28/google-capsule-networks/)
+    - [CapsNetのPytorch実装](https://qiita.com/motokimura/items/cae9defed10cb5efeb62)
