@@ -1,5 +1,5 @@
 """
-Hinton氏の論文「Dynamic Routing Between Capsules」のカプセルネットワークをKerasで実装した.
+ヒントン氏の論文「Dynamic Routing Between Capsules」のカプセルネットワークをKerasで実装した.
 おそらくバックエンドでTensorFlowでのみ動く.
 試してはいないが, 別のバックエンドに適応させることは簡単である.
 
