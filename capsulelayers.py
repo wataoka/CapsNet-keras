@@ -1,10 +1,7 @@
 """
-Some key layers used for constructing a Capsule Network. These layers can used to construct CapsNet on other dataset, 
-not just on MNIST.
-*NOTE*: some functions can be implemented in multiple ways, I keep all of them. You can try them for yourself just by
-uncommenting them and commenting their counterparts.
-
-Author: Xifeng Guo, E-mail: `guoxifeng1990@163.com`, Github: `https://github.com/XifengGuo/CapsNet-Keras`
+カプセルネットを構成する重要なレイヤー.
+これらのレイヤーは他のデータセットでも使用することができます.
+関数は様々な場面で使用することができます. ぜひ使ってみてください.
 """
 
 import keras.backend as K
@@ -14,8 +11,9 @@ from keras import initializers, layers
 
 class Length(layers.Layer):
     """
-    Compute the length of vectors. This is used to compute a Tensor that has the same shape with y_true in margin_loss.
-    Using this layer as model's output can directly predict labels by using `y_pred = np.argmax(model.predict(x), 1)`
+    ベクトルの長さを計算する.
+    y_trueと同じ形のテンソルを計算する.
+    このレイヤーをモデルの出力として使用することは, `y_pred = np.argmax(mode.predict(x), 1)`としてラベルの予想したことと同じです.
     inputs: shape=[None, num_vectors, dim_vector]
     output: shape=[None, num_vectors]
     """
