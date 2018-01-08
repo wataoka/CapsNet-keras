@@ -64,10 +64,10 @@ class Mask(layers.Layer):
 
 def squash(vectors, axis=-1):
     """
-    The non-linear activation used in Capsule. It drives the length of a large vector to near 1 and small vector to 0
-    :param vectors: some vectors to be squashed, N-dim tensor
-    :param axis: the axis to squash
-    :return: a Tensor with same shape as input vectors
+    カプセルネットワークでは非線形の活性化関数が使用される. この関数はベクトルの長さを0~1に圧縮する.
+    :param vectors: 圧出される複数のベクトル, 4次元テンソル
+    :param axis: 圧縮する軸
+    :return: 複数の入力ベクトルと同じ形の一つのテンソル
     """
     s_squared_norm = K.sum(K.square(vectors), axis, keepdims=True)
     scale = s_squared_norm / (1 + s_squared_norm) / K.sqrt(s_squared_norm + K.epsilon())
@@ -76,14 +76,13 @@ def squash(vectors, axis=-1):
 
 class CapsuleLayer(layers.Layer):
     """
-    The capsule layer. It is similar to Dense layer. Dense layer has `in_num` inputs, each is a scalar, the output of the 
-    neuron from the former layer, and it has `out_num` output neurons. CapsuleLayer just expand the output of the neuron
-    from scalar to vector. So its input shape = [None, input_num_capsule, input_dim_capsule] and output shape = \
-    [None, num_capsule, dim_capsule]. For Dense Layer, input_dim_capsule = dim_capsule = 1.
-    
-    :param num_capsule: number of capsules in this layer
-    :param dim_capsule: dimension of the output vectors of the capsules in this layer
-    :param routings: number of iterations for the routing algorithm
+    カプセルレイヤーは全結合層と似ているが,
+    カプセルレイヤーはニューロンの出力値はスカラーからベクトルに拡大する.
+    だから入力値のshapeは [None, input_num_capsule, input_dim_capsule] であり, 出力値のshapeは [None, num_capsule, dim_capsule] である.
+
+    :param num_capsule: カプセルの数
+    :param dim_capsule: 出力カプセルの次元数
+    :param routings: routingアルゴリズムを繰り返す回数
     """
     def __init__(self, num_capsule, dim_capsule, routings=3,
                  kernel_initializer='glorot_uniform',
@@ -99,7 +98,7 @@ class CapsuleLayer(layers.Layer):
         self.input_num_capsule = input_shape[1]
         self.input_dim_capsule = input_shape[2]
 
-        # Transform matrix
+        # 行列を変形
         self.W = self.add_weight(shape=[self.num_capsule, self.input_num_capsule,
                                         self.dim_capsule, self.input_dim_capsule],
                                  initializer=self.kernel_initializer,
@@ -158,11 +157,11 @@ class CapsuleLayer(layers.Layer):
 
 def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
     """
-    Apply Conv2D `n_channels` times and concatenate all capsules
-    :param inputs: 4D tensor, shape=[None, width, height, channels]
-    :param dim_capsule: the dim of the output vector of capsule
-    :param n_channels: the number of types of capsules
-    :return: output tensor, shape=[None, num_capsule, dim_capsule]
+    畳み込みを`n_channels`回行い, 全てのカプセルを結合する.
+    :param inputs: 4次元テンソル, shape=[None, width, height, channels]
+    :param dim_capsule: カプセルの出力ベクトルの次元数
+    :param n_channels: カプセルの種類の数
+    :return: 出力テンソル, shape=[None, num_capsule, dim_capsule]
     """
     output = layers.Conv2D(filters=dim_capsule*n_channels, kernel_size=kernel_size, strides=strides, padding=padding,
                            name='primarycap_conv2d')(inputs)
@@ -171,8 +170,8 @@ def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
 
 
 """
-# The following is another way to implement primary capsule layer. This is much slower.
-# Apply Conv2D `n_channels` times and concatenate all capsules
+# 下記はprimaryカプセルレイヤーの別の実装方法である. この実装は速度が遅い.
+# 畳み込みを`n_channels`回行い, 全てのカプセルを結合する.
 def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
     outputs = []
     for _ in range(n_channels):
