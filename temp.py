@@ -1,57 +1,60 @@
-"""
-Hinton氏の論文「Dynamic Routing Between Capsules」のカプセルネットワークをKerasで実装した.
-おそらくバックエンドでTensorFlowでのみ動く.
-試してはいないが, 別のバックエンドに適応させることは簡単である.
-
-使い方:
-    python capsulenet.py
-    python capsulenet.py --epochs 50
-    python capsulenet.py --epochs 50 --routings 3
-
-結果:
-    validation accuracy = 99.50% (epochs=20)
-    validation accuracy = 99.66% (epochs=50)
-    ※single GTX1070を使用
-"""
-
 import numpy as np
-from keras import layers, models, optimizers
-from keras import backend as K
-from keras.utils import to_categorical
-import matplotlib.pyplot as plt
-from Keras.utils import combine_images
-from PIL import Image
-from capsulelayers import CapsulelLayer, PrimaryCap, Length, Mask
+import os
+import pandas as pd
+from keras.preprocessing.image import ImageDataGenerator
+from keras import callbacks
+from keras.utils.vis_utils import plot_model
+import keras.backend as K
+import tensorflow as tf
+from keras import initializers, layers
 
-K.set_image_data_format('channels_last')
+class Length(layers.Layer):
+    def call(self, inputs, **kwargs):
+        return K.sqrt(K.sum(K.square(inputs), -1))
 
-def CapsNet(input_shape, n_class, routings):
-    """
-    MNISTに関するカプセルネットワーク
+    def compute_output_shape(self, input_shape):
+        return input_shape[:-1]
 
-    :param input_shape: 入力データのshape(3次元で[width, height, channels]という形)
-    :param n_class: クラスの数
-    :param routings: routingを行う回数
+class Mask(layers.Layer):
+    def call(selfm, inputs, **kwargs):
+        if type(inputs) is list:
+            assert len(inputs) == 2
+            inputs, mask = inputs
+        else:
+            x = inputs
+            x = (x-K.max(x, 1, True)) / K.epsilon() + 1
+            mask = K.clip(x, 0, 1)
 
-    :return 2つのmodel (1つ目:学習用モデル, 2つ目:評価用モデル)
-            `eval_model`というモデルも学習用としてしようすることもできる.
-    """
-    x = layers.Input(shape=input_shape)
+        inputs_masked = K.batch_dot(inputs, mask, [1, 1])
+        return inputs_masked
 
-    # 1層目: ただの2次元畳み込み層
-    conv1 = layers.Conv2D(filters=256, kernel_size=9, strides=1, padding='valid', activation='relu', name='conv1')(x)
+    def compute_output_shape(self, input_shape):
+        if type(input_shape[0]) is tuple:
+            return tuple([None, input_shape[0][-1]])
+        else:
+            return tuple([None, input_shape[-1]])
 
-    # 2層目: 活性化関数にsquash関数を用いた2次元畳み込み層で,[None ,num_capsule, dim_capsule]という形に変換する
-    primarycaps = PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
+def squash(vectors, axis=-1):
+    s_squared_norm = K.sum(K.square(vectors), axis, keepdims=True)
+    scale = s_squared_norm / (1 + s_squared_norm) / K.sqrt(s_squared_norm)
+    return scale * vectors
 
-    # 3層目: カプセル層 (routingアルゴリズムはここで行っている)
-    digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=16, routings=routings,
-                             name='digitcaps')(primarycaps)
+class CapsuleLayer(layers.Layer):
+    def __init__(self, num_capsule, dim_vector, num_routing=3,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
+                 **kwargs):
+        super(CapsuleLayer, self).__init__(**kwargs)
+        slf.num_capsule = num_capsule
+        self.dim_vector = dim_vector
+        self.num_routing = num_routing
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
 
-    # 4層目: ここはカプセルを"長さ"に変形するための補助レイヤーで, 教師データの形に合わせている.
-    # tensorflowを使用している場合, ここは必要ありません.
-    out_caps = Length(name='capsnet')(digitcaps)
+        def build(self, input_shape):
+            assert len(input_shape) >= 3,
+            self.input_num_capsule = input_shape[1]
+            self.input_dim_vector = input_shape[2]
 
-    # Decoderネットワーク
-    y = layers.Input(shape=(n_class,))
-    masked_by_y = Mask()([digitcaps, y])
+            self.W = self.add_weight(shape=[self.input_num_capsule, self.num_capsule, self.input_dim_vector, self.dim_vector],initializer=self.kernel_initializer, name='W')
+            self.W = self.add_weight(shape=[self.input_num_capsule, self.num_capsule, self.inpu_dim_vector, self.dim_vector], initializer=self.kernel_initializer, name='W')

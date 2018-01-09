@@ -26,10 +26,10 @@ class Length(layers.Layer):
 
 class Mask(layers.Layer):
     """
-    Mask a Tensor with shape=[None, num_capsule, dim_vector] either by the capsule with max length or by an additional 
-    input mask. Except the max-length capsule (or specified capsule), all vectors are masked to zeros. Then flatten the
-    masked Tensor.
-    For example:
+    shapeが[None, num_capsule, dim_vector]のテンソルをマスク処理する.
+    最大値ベクトルを除き, 全てのベクトルを0にマスク処理する.
+    そして, マスク処理されたテンソルを1次元にする.
+    例:
         ```
         x = keras.layers.Input(shape=[8, 3, 2])  # batch_size=8, each sample contains 3 capsules with dim_vector=2
         y = keras.layers.Input(shape=[8, 3])  # True labels. 8 samples, 3 classes, one-hot coding.
@@ -39,13 +39,13 @@ class Mask(layers.Layer):
         ```
     """
     def call(self, inputs, **kwargs):
-        if type(inputs) is list:  # true label is provided with shape = [None, n_classes], i.e. one-hot code.
+        if type(inputs) is list:  # 正しいラベルはshape=[None, n_class]で与えられる. すなわちone-hotである.
             assert len(inputs) == 2
             inputs, mask = inputs
-        else:  # if no true label, mask by the max length of capsules. Mainly used for prediction
-            # compute lengths of capsules
+        else:  # 正しくないラベルは, 最大値ラベルでマスクされる.
+            # カプセルの長さを計算
             x = K.sqrt(K.sum(K.square(inputs), -1))
-            # generate the mask which is a one-hot code.
+            # one-hotで記述されたマスクを生成
             # mask.shape=[None, n_classes]=[None, num_capsule]
             mask = K.one_hot(indices=K.argmax(x, 1), num_classes=x.get_shape().as_list()[1])
 
@@ -111,20 +111,20 @@ class CapsuleLayer(layers.Layer):
         # inputs_expand.shape=[None, 1, input_num_capsule, input_dim_capsule]
         inputs_expand = K.expand_dims(inputs, 1)
 
-        # Replicate num_capsule dimension to prepare being multiplied by W
+        # 重みWにかけられる準備をするためにカプセルを複製する.
         # inputs_tiled.shape=[None, num_capsule, input_num_capsule, input_dim_capsule]
         inputs_tiled = K.tile(inputs_expand, [1, self.num_capsule, 1, 1])
 
-        # Compute `inputs * W` by scanning inputs_tiled on dimension 0.
+        # `inputs * W`を計算
         # x.shape=[num_capsule, input_num_capsule, input_dim_capsule]
         # W.shape=[num_capsule, input_num_capsule, dim_capsule, input_dim_capsule]
-        # Regard the first two dimensions as `batch` dimension,
-        # then matmul: [input_dim_capsule] x [dim_capsule, input_dim_capsule]^T -> [dim_capsule].
+        # はじめの2次元をバッチ次元数としてみなす.
+        # そして [input_dim_capsule] x [dim_capsule, input_dim_capsule]^T -> [dim_capsule].
         # inputs_hat.shape = [None, num_capsule, input_num_capsule, dim_capsule]
         inputs_hat = K.map_fn(lambda x: K.batch_dot(x, self.W, [2, 3]), elems=inputs_tiled)
 
-        # Begin: Routing algorithm ---------------------------------------------------------------------#
-        # The prior for coupling coefficient, initialized as zeros.
+        # 開始: Routingアルゴリズム ---------------------------------------------------------------------#
+        # 前処理として係数を0に初期化
         # b.shape = [None, self.num_capsule, self.input_num_capsule].
         b = tf.zeros(shape=[K.shape(inputs_hat)[0], self.num_capsule, self.input_num_capsule])
 
@@ -147,7 +147,7 @@ class CapsuleLayer(layers.Layer):
                 # then matmal: [dim_capsule] x [input_num_capsule, dim_capsule]^T -> [input_num_capsule].
                 # b.shape=[batch_size, num_capsule, input_num_capsule]
                 b += K.batch_dot(outputs, inputs_hat, [2, 3])
-        # End: Routing algorithm -----------------------------------------------------------------------#
+        # 終了: Routingアルゴリズム -----------------------------------------------------------------------#
 
         return outputs
 
