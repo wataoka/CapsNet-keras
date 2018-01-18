@@ -37,24 +37,24 @@ def CapsNet(input_shape, n_class, routings):
     :return 2つのmodel (1つ目:学習用モデル, 2つ目:評価用モデル)
             `eval_model`というモデルも学習用としてしようすることもできる.
     """
-    print(input_shape)
+    # x.shape = (None, 28, 28, 1)
     x = layers.Input(shape=input_shape)
-    print(x)
-    quit()
-
 
     # 1層目: ただの2次元畳み込み層
+    # conv1.shape = (None, 20, 20, 256)
     conv1 = layers.Conv2D(filters=256, kernel_size=9, strides=1, padding='valid', activation='relu', name='conv1')(x)
 
     # 2層目: 活性化関数にsquash関数を用いた2次元畳み込み層で,[None ,num_capsule, dim_capsule]という形に変換する
+    # primarycaps.shape = (None, 1152, 8)
     primarycaps = PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
 
     # 3層目: カプセル層 (routingアルゴリズムはここで行っている)
+    # digitcaps.shape = (None, 10, 16)
     digitcaps = CapsuleLayer(num_capsule=n_class, dim_capsule=16, routings=routings,
                              name='digitcaps')(primarycaps)
 
     # 4層目: ここはカプセルを"長さ"に変形するための補助レイヤーで, 教師データの形に合わせている.
-    # tensorflowを使用している場合, ここは必要ありません.
+    # out_caps.shape = (None, 10)
     out_caps = Length(name='capsnet')(digitcaps)
 
     # Decoderネットワーク

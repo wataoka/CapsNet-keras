@@ -1,0 +1,2 @@
+epoch,capsnet_acc,capsnet_loss,decoder_loss,loss,val_capsnet_acc,val_capsnet_loss,val_decoder_loss,val_loss
+0,0.850033336009,0.152436581322,0.0670718164121,0.178728732963,0.982700008154,0.034106624946,0.0440333691239,0.0513677048311

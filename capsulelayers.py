@@ -73,6 +73,9 @@ def squash(vectors, axis=-1):
     scale = s_squared_norm / (1 + s_squared_norm) / K.sqrt(s_squared_norm + K.epsilon())
     return scale * vectors
 
+def step(vectors, axis=-1):
+    s_squared_norm = K.sum(K.square(vectors), axis, keepdims=True)
+    return vectors / s_squared_norm
 
 class CapsuleLayer(layers.Layer):
     """
@@ -123,31 +126,14 @@ class CapsuleLayer(layers.Layer):
         # inputs_hat.shape = [None, num_capsule, input_num_capsule, dim_capsule]
         inputs_hat = K.map_fn(lambda x: K.batch_dot(x, self.W, [2, 3]), elems=inputs_tiled)
 
-        # 開始: Routingアルゴリズム ---------------------------------------------------------------------#
-        # 前処理として係数を0に初期化
-        # b.shape = [None, self.num_capsule, self.input_num_capsule].
-        b = tf.zeros(shape=[K.shape(inputs_hat)[0], self.num_capsule, self.input_num_capsule])
-
+        # 開始: Light-Routingアルゴリズム ---------------------------------------------------------------------#
+        c = tf.ones(shape=[K.shape(inputs_hat)[0], self.num_capsule, self.input_num_capsule])
         assert self.routings > 0, 'The routings should be > 0.'
         for i in range(self.routings):
-            # c.shape=[batch_size, num_capsule, input_num_capsule]
-            c = tf.nn.softmax(b, dim=1)
-
-            # c.shape =  [batch_size, num_capsule, input_num_capsule]
-            # inputs_hat.shape=[None, num_capsule, input_num_capsule, dim_capsule]
-            # The first two dimensions as `batch` dimension,
-            # then matmal: [input_num_capsule] x [input_num_capsule, dim_capsule] -> [dim_capsule].
-            # outputs.shape=[None, num_capsule, dim_capsule]
-            outputs = squash(K.batch_dot(c, inputs_hat, [2, 2]))  # [None, 10, 16]
-
+            outputs = step(K.batch_dot(c, inputs_hat, [2, 2]))  # [None, 10, 16]
             if i < self.routings - 1:
-                # outputs.shape =  [None, num_capsule, dim_capsule]
-                # inputs_hat.shape=[None, num_capsule, input_num_capsule, dim_capsule]
-                # The first two dimensions as `batch` dimension,
-                # then matmal: [dim_capsule] x [input_num_capsule, dim_capsule]^T -> [input_num_capsule].
-                # b.shape=[batch_size, num_capsule, input_num_capsule]
-                b += K.batch_dot(outputs, inputs_hat, [2, 3])
-        # 終了: Routingアルゴリズム -----------------------------------------------------------------------#
+                c += K.batch_dot(outputs, inputs_hat, [2, 3])
+        # 終了: Light-Routingアルゴリズム -----------------------------------------------------------------------#
 
         return outputs
 
@@ -166,7 +152,7 @@ def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
     output = layers.Conv2D(filters=dim_capsule*n_channels, kernel_size=kernel_size, strides=strides, padding=padding,
                            name='primarycap_conv2d')(inputs)
     outputs = layers.Reshape(target_shape=[-1, dim_capsule], name='primarycap_reshape')(output)
-    return layers.Lambda(squash, name='primarycap_squash')(outputs)
+    return layers.Lambda(step, name='primarycap_step')(outputs)
 
 
 """
@@ -178,5 +164,5 @@ def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
         output = layers.Conv2D(filters=dim_capsule, kernel_size=kernel_size, strides=strides, padding=padding)(inputs)
         outputs.append(layers.Reshape([output.get_shape().as_list()[1] ** 2, dim_capsule])(output))
     outputs = layers.Concatenate(axis=1)(outputs)
-    return layers.Lambda(squash)(outputs)
+    return layers.Lambda(step)(outputs)
 """
